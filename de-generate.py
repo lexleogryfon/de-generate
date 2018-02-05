@@ -27,15 +27,7 @@ pypy 3.5.3
 # BUG what if file.so does not have +x permission?
 
 
-
-# variables
-#files = set()
-#notfound_libraries = []
-#temp = set()
-
-
-
-def scan(path_string, libs=[], all_files_param = set()):
+def scan(path_string, libs=[], all_files_param=set()):
     """
     return set of libraries that can't be linked by ldd AND set of all_files
     """
@@ -44,7 +36,7 @@ def scan(path_string, libs=[], all_files_param = set()):
     p = Path(path_string)
     for child in p.iterdir():
         if child.is_dir():
-            scan(child, libs = notfound_libraries)
+            scan(child, libs=notfound_libraries)
         else:
             all_files.add(child.name)
             if os.access(str(child), os.X_OK):
@@ -53,7 +45,7 @@ def scan(path_string, libs=[], all_files_param = set()):
                     output = output.splitlines()
                     notfound_libraries.extend(output)
                 except OSError as e:
-                    #trying to catch unclosed pipe > ulimit
+                    # trying to catch unclosed pipe > ulimit
                     print(e)
                 except sp.CalledProcessError:
                     # catches exitcode that not equal 0, common in our case
@@ -66,33 +58,16 @@ def scan(path_string, libs=[], all_files_param = set()):
     return notfound_libraries, all_files
 
 
-
-
-# print(temp, len(temp), len(set(temp)))
-#print(notfound_libraries == n_l_after_return, hash(tuple(notfound_libraries)), hash(tuple(n_l_after_return)))
-#print(hash(tuple(n_l_after_return)))
-#for i in range(0, len(n_l_after_return)): print(type(n_l_after_return[i]), len(n_l_after_return), n_l_after_return[i])
-
-# for i in range(1, 10): print(type(notfound_libraries[i]), len(notfound_libraries), notfound_libraries[i])
-#exit()
-
-
-
-
-
-
 def remove_existing_libs(libs, files):
     non_existing_libs = set()
     for lib in libs:
         if lib in files:
-        # print(lib + " is in folder")
+            # print(lib + " is in folder")
             pass
         else:
             # print(lib + " NOT in folder")
             non_existing_libs.add(lib)
     return non_existing_libs
-
-
 
 
 def guess_pkgs(libs):
@@ -102,6 +77,7 @@ def guess_pkgs(libs):
 #        print(pkg)
         pkgs.add(pkg)
     return pkgs
+
 
 """
 
@@ -123,12 +99,13 @@ def guess_prefixes(pkgs):
 
 """
 
+
 def generate_nix(pkgs):
     """
     pkgs : accept raw string_of_guessed_pkgs (with \n separators)
     substitute $output_of_dee_generate in template.nix and produces newenv.nix
     """
-    
+
     string_of_guessed_pkgs = pkgs
     with open('template.nix', 'r') as file1, open('newenv.nix', 'w') as file2:
         tmplt = Template(file1.read())
@@ -138,9 +115,6 @@ def generate_nix(pkgs):
         file2.write(result)
 
 
-
-
-    
 def main(argv):
 
     input = '../wingide/'
@@ -149,7 +123,7 @@ def main(argv):
     # for i in notfound_libraries: print(i)
     # print(len(i), type(notfound_libraries))
     # print('\n\n')
-    
+
     notfound_libraries = remove_existing_libs(notfound_libraries, files)
     # print('\n\n')
     # print('libraries that are not in the folder')
@@ -162,6 +136,7 @@ def main(argv):
     string_of_guessed_pkgs = " \n".join(guessed_pkgs)
 
     generate_nix(string_of_guessed_pkgs)
+    exit(0)
 
 
 if __name__ == "__main__":
