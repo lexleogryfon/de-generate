@@ -1,5 +1,5 @@
 #!/bin/env python
-import os
+import os, sys
 import subprocess as sp
 from pathlib import Path
 from string import Template
@@ -21,6 +21,7 @@ pypy 3.5.3
 # DONE generate text output file
 # TODO refactor
 # TODO try use raw package prefixes from nix-locate
+# TODO add reStructuredText
 # TODO add package.nix
 # TODO add pyinstaller
 
@@ -28,18 +29,22 @@ pypy 3.5.3
 
 # variables
 files = set()
-notfound_libraries = []
+#notfound_libraries = []
 temp = set()
 
 input = '../wingide/'
 
 
 
-def scan(path_string):
+def scan(path_string, libs=[]):
+    """
+    return set of libraries that can't be linked by ldd
+    """
+    notfound_libraries = libs
     p = Path(path_string)
     for child in p.iterdir():
         if child.is_dir():
-            scan(child)
+            scan(child, libs = notfound_libraries)
         else:
             temp.add(child.name)
             if os.access(str(child), os.X_OK):
@@ -48,32 +53,32 @@ def scan(path_string):
                     output = output.splitlines()
                     notfound_libraries.extend(output)
                 except OSError as e:
+                    #trying to catch unclosed pipe > ulimit
                     print(e)
                 except sp.CalledProcessError:
                     # catches exitcode that not equal 0, common in our case
                     # do nothing because ldd usually spits non zero exit code when applied to non ELF\.so , and grep spits non zero exit code when did not found mathces (e.g. no output)
                     pass
+
+    # removing dublicates and split strings to leave only library filename
+    notfound_libraries = {i.split()[0] for i in notfound_libraries}
+
     return notfound_libraries
 
-                
-n_l_after_return = scan(input)
+
 
 
 # print(temp, len(temp), len(set(temp)))
-print(notfound_libraries == n_l_after_return)
+#print(notfound_libraries == n_l_after_return, hash(tuple(notfound_libraries)), hash(tuple(n_l_after_return)))
+#print(hash(tuple(n_l_after_return)))
+#for i in range(0, len(n_l_after_return)): print(type(n_l_after_return[i]), len(n_l_after_return), n_l_after_return[i])
+
 # for i in range(1, 10): print(type(notfound_libraries[i]), len(notfound_libraries), notfound_libraries[i])
-exit()
+#exit()
 
 
+"""
 
-# removing dublicates and split strings to leave only library filename
-notfound_libraries = {i.split()[0] for i in notfound_libraries}
-
-
-for i in notfound_libraries:
-    print(i)
-
-# print(len(i), type(notfound_libraries))
 
 
 def remove_existing_libs(libs, files):
@@ -131,3 +136,19 @@ with open('template.nix', 'r') as file1, open('newenv.nix', 'w') as file2:
     result = tmplt.substitute(d)
 #    print(result)
     file2.write(result)
+
+
+"""
+
+def main(argv):
+
+    notfound_libraries = scan(input)
+    for i in notfound_libraries: print(i)
+
+    print(len(i), type(notfound_libraries))
+    exit()
+
+
+
+if __name__ == "__main__":
+    main(sys.argv)
