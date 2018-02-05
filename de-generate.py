@@ -19,10 +19,10 @@ pypy 3.5.3
 # option handle multi string output from nix-locate
 # DONE guess proper package names
 # DONE generate text output file
-# TODO refactor
-# TODO try use raw package prefixes from nix-locate
-# TODO add reStructuredText
+# DONE refactor
+# DONE try use raw package prefixes from nix-locate
 # TODO add package.nix
+# TODO add reStructuredText
 # TODO add pyinstaller
 # BUG what if file.so does not have +x permission?
 
@@ -70,12 +70,22 @@ def remove_existing_libs(libs, files):
     return non_existing_libs
 
 
-def guess_pkgs(libs):
+def guess_pkgs(libs, output_prefixes=False):
     pkgs = set()
-    for lib in libs:
-        pkg = sp.check_output('nix-locate --top-level {} | grep " x "'.format(lib), shell=True, stderr=sp.STDOUT, universal_newlines=True).split()[0].split(".")[-2]
-#        print(pkg)
-        pkgs.add(pkg)
+
+    if output_prefixes:
+        for lib in libs:
+            # pkg = sp.check_output('nix-locate --top-level {} | grep " x "'.format(lib), shell=True, stderr=sp.STDOUT, universal_newlines=True).split()[0]
+            output = sp.check_output('nix-locate --top-level {}'.format(lib), shell=True, stderr=sp.STDOUT, universal_newlines=True).splitlines()
+            for line in output:
+                pkg = line.split()[0]
+                # print(pkg)
+                pkgs.add(pkg)        
+    else:
+        for lib in libs:
+            pkg = sp.check_output('nix-locate --top-level {} | grep " x "'.format(lib), shell=True, stderr=sp.STDOUT, universal_newlines=True).split()[0].split(".")[-2]
+    #        print(pkg)
+            pkgs.add(pkg)
     return pkgs
 
 
@@ -117,24 +127,24 @@ def generate_nix(pkgs):
 
 def main(argv):
 
-    input = '../wingide/'
+    input = '../wing.new'
     notfound_libraries, files = scan(input)
-    # print('libraries that cannot be found by ldd')
-    # for i in notfound_libraries: print(i)
-    # print(len(i), type(notfound_libraries))
-    # print('\n\n')
+    print('libraries that cannot be found by ldd')
+    for i in notfound_libraries: print(i)
+    print(len(i), type(notfound_libraries))
+    print('\n\n')
 
     notfound_libraries = remove_existing_libs(notfound_libraries, files)
-    # print('\n\n')
-    # print('libraries that are not in the folder')
-    # for i in notfound_libraries: print(i)
-    # print(len(notfound_libraries))
+    print('\n\n')
+    print('libraries that are not in the folder')
+    for i in notfound_libraries: print(i)
+    print(len(notfound_libraries))
 
-    # print('\n\n')
-    # print(guess_pkgs(notfound_libraries))
-    guessed_pkgs = guess_pkgs(notfound_libraries)
+    print('\n\n')
+    print(guess_pkgs(notfound_libraries, output_prefixes=True))
+    guessed_pkgs = guess_pkgs(notfound_libraries, output_prefixes=True)
     string_of_guessed_pkgs = " \n".join(guessed_pkgs)
-
+#    exit()
     generate_nix(string_of_guessed_pkgs)
     exit(0)
 
