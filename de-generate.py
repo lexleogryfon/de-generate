@@ -24,29 +24,29 @@ pypy 3.5.3
 # TODO add reStructuredText
 # TODO add package.nix
 # TODO add pyinstaller
+# BUG what if file.so does not have +x permission?
 
 
 
 # variables
-files = set()
+#files = set()
 #notfound_libraries = []
-temp = set()
-
-input = '../wingide/'
+#temp = set()
 
 
 
-def scan(path_string, libs=[]):
+def scan(path_string, libs=[], all_files_param = set()):
     """
-    return set of libraries that can't be linked by ldd
+    return set of libraries that can't be linked by ldd AND set of all_files
     """
+    all_files = all_files_param
     notfound_libraries = libs
     p = Path(path_string)
     for child in p.iterdir():
         if child.is_dir():
             scan(child, libs = notfound_libraries)
         else:
-            temp.add(child.name)
+            all_files.add(child.name)
             if os.access(str(child), os.X_OK):
                 try:
                     output = sp.check_output('ldd {} 2>&1 | grep "not found"'.format(child), shell=True, stderr=sp.STDOUT, universal_newlines=True)
@@ -63,7 +63,7 @@ def scan(path_string, libs=[]):
     # removing dublicates and split strings to leave only library filename
     notfound_libraries = {i.split()[0] for i in notfound_libraries}
 
-    return notfound_libraries
+    return notfound_libraries, all_files
 
 
 
@@ -77,7 +77,7 @@ def scan(path_string, libs=[]):
 #exit()
 
 
-"""
+
 
 
 
@@ -88,31 +88,22 @@ def remove_existing_libs(libs, files):
         # print(lib + " is in folder")
             pass
         else:
-            print(lib + " NOT in folder")
+            # print(lib + " NOT in folder")
             non_existing_libs.add(lib)
     return non_existing_libs
 
 
-print('\n\n')
-notfound_libraries = remove_existing_libs(notfound_libraries, temp)
-for i in notfound_libraries: print(i)
 
 
-def guess_pkgs():
+def guess_pkgs(libs):
     pkgs = set()
-    for lib in notfound_libraries:
+    for lib in libs:
         pkg = sp.check_output('nix-locate --top-level {} | grep " x "'.format(lib), shell=True, stderr=sp.STDOUT, universal_newlines=True).split()[0].split(".")[-2]
 #        print(pkg)
         pkgs.add(pkg)
     return pkgs
 
-
-print('\n\n')
-
-
-print(guess_pkgs())
-guessed_pkgs = guess_pkgs()
-string_of_guessed_pkgs = " \n".join(guessed_pkgs)
+"""
 
 
 def guess_prefixes(pkgs):
@@ -130,24 +121,47 @@ def guess_prefixes(pkgs):
 # guess_prefixes(guessed_pkgs)
 
 
-with open('template.nix', 'r') as file1, open('newenv.nix', 'w') as file2:
-    tmplt = Template(file1.read())
-    d = {'output_of_dee_generate': string_of_guessed_pkgs}
-    result = tmplt.substitute(d)
-#    print(result)
-    file2.write(result)
-
-
 """
 
+def generate_nix(pkgs):
+    """
+    pkgs : accept raw string_of_guessed_pkgs (with \n separators)
+    substitute $output_of_dee_generate in template.nix and produces newenv.nix
+    """
+    
+    string_of_guessed_pkgs = pkgs
+    with open('template.nix', 'r') as file1, open('newenv.nix', 'w') as file2:
+        tmplt = Template(file1.read())
+        d = {'output_of_dee_generate': string_of_guessed_pkgs}
+        result = tmplt.substitute(d)
+        # print(result)
+        file2.write(result)
+
+
+
+
+    
 def main(argv):
 
-    notfound_libraries = scan(input)
-    for i in notfound_libraries: print(i)
+    input = '../wingide/'
+    notfound_libraries, files = scan(input)
+    # print('libraries that cannot be found by ldd')
+    # for i in notfound_libraries: print(i)
+    # print(len(i), type(notfound_libraries))
+    # print('\n\n')
+    
+    notfound_libraries = remove_existing_libs(notfound_libraries, files)
+    # print('\n\n')
+    # print('libraries that are not in the folder')
+    # for i in notfound_libraries: print(i)
+    # print(len(notfound_libraries))
 
-    print(len(i), type(notfound_libraries))
-    exit()
+    # print('\n\n')
+    # print(guess_pkgs(notfound_libraries))
+    guessed_pkgs = guess_pkgs(notfound_libraries)
+    string_of_guessed_pkgs = " \n".join(guessed_pkgs)
 
+    generate_nix(string_of_guessed_pkgs)
 
 
 if __name__ == "__main__":
