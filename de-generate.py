@@ -19,6 +19,7 @@ pypy 3.5.3
 # option handle multi string output from nix-locate
 # DONE guess proper package names
 # DONE generate text output file
+# TODO refactor
 # TODO try use raw package prefixes from nix-locate
 # TODO add package.nix
 # TODO add pyinstaller
@@ -30,7 +31,7 @@ files = set()
 notfound_libraries = []
 temp = set()
 
-input = ''
+input = '../wingide/'
 
 
 
@@ -52,15 +53,16 @@ def scan(path_string):
                     # catches exitcode that not equal 0, common in our case
                     # do nothing because ldd usually spits non zero exit code when applied to non ELF\.so , and grep spits non zero exit code when did not found mathces (e.g. no output)
                     pass
-
+    return notfound_libraries
 
                 
-scan(input)
+n_l_after_return = scan(input)
 
 
 # print(temp, len(temp), len(set(temp)))
+print(notfound_libraries == n_l_after_return)
 # for i in range(1, 10): print(type(notfound_libraries[i]), len(notfound_libraries), notfound_libraries[i])
-
+exit()
 
 
 
