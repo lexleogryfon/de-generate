@@ -6,7 +6,7 @@ from string import Template
 # import ipdb
 
 """
-pypy 3.5.3
+made with emacs, elpy, color-theme-ld-dark,  pypy3.5.3
 """
 
 # DONE check if file is executable before calling ldd
@@ -21,11 +21,15 @@ pypy 3.5.3
 # DONE generate text output file
 # DONE refactor
 # DONE try use raw package prefixes from nix-locate
-# TODO add package.nix
-# TODO add reStructuredText
-# TODO add pyinstaller
+# option add package.nix : won't implement due complexity
+# option add reStructuredText docstrings
+# option add pyinstaller
 # BUG what if file.so does not have +x permission?
 
+# DONE make template.nix look a like FHSsmall.nix
+# DONE write readme.md
+# DONE clear out input variable
+# DONE comment nixOs.wiki
 
 def scan(path_string, libs=[], all_files_param=set()):
     """
@@ -89,26 +93,6 @@ def guess_pkgs(libs, output_prefixes=False):
     return pkgs
 
 
-"""
-
-
-def guess_prefixes(pkgs):
-    # unimplemented, because of nix-env can't be run in FHS, error: Nix database directory ‘/nix/var/nix/db’ is not writable: Permission denied
-    pkgs_with_prefixes = ()
-    for pkg in pkgs:
-        # try
-        prefixed_pkg = sp.check_output('nix-env -qaPsc --description {}'.format(pkg),
-                                       shell=True, stderr=sp.STDOUT,
-                                       universal_newlines=True)  # .split()[0].split(".")[-2]
-        print(prefixed_pkg)
-    return pkgs_with_prefixes
-
-
-# guess_prefixes(guessed_pkgs)
-
-
-"""
-
 
 def generate_nix(pkgs):
     """
@@ -127,7 +111,7 @@ def generate_nix(pkgs):
 
 def main(argv):
 
-    input = '../wing.new'
+    input = '/home/usr/path/to/folder_with_executables'
     notfound_libraries, files = scan(input)
     print('libraries that cannot be found by ldd')
     for i in notfound_libraries: print(i)
