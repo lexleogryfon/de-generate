@@ -3,15 +3,17 @@
 Dependency generator for prebuilt binaries and shared libraries in NixOS.
 
 ## How?
-
+    # Install
+    nix-env -iA nixos.nix-index nixos.git
+    nix-index
     git clone https://github.com/lexleogryfon/de-generate.git
     cd ./de-generate
+    # Use
     nix-shell template.nix
-    # edit nix-de-generate, assign path string to input variable inside main()
-    # e.g. input = '/home/usr/path/to/folder_with_executables'
-    ./nix-de-generate
+    ./nix-de-generate /home/usr/path/to/folder_with_executables
     # a file newenv.nix should appear in current directory
     # with list of packages to satisfy dependency requirements.
+    
 
 ## Why?
 

@@ -3,9 +3,11 @@ import os, sys
 import subprocess as sp
 from pathlib import Path
 from string import Template
-# import ipdb
 
 """
+De-generate, nix-de-generate: Dependency generator for prebuilt binaries and shared libraries in NixOS.
+
+for usage example see https://github.com/lexleogryfon/de-generate/blob/master/README.md
 made with emacs, elpy, color-theme-ld-dark,  pypy3.5.3
 """
 
@@ -21,9 +23,7 @@ made with emacs, elpy, color-theme-ld-dark,  pypy3.5.3
 # DONE generate text output file
 # DONE refactor
 # DONE try use raw package prefixes from nix-locate
-# option add package.nix : won't implement due complexity
 # option add reStructuredText docstrings
-# option add pyinstaller
 # BUG what if file.so does not have +x permission?
 
 # DONE make template.nix look a like FHSsmall.nix
@@ -111,24 +111,22 @@ def generate_nix(pkgs):
 
 def main(argv):
 
-    input = '/home/usr/path/to/folder_with_executables'
+    input = argv[1]
     notfound_libraries, files = scan(input)
     print('libraries that cannot be found by ldd')
     for i in notfound_libraries: print(i)
-    print(len(i), type(notfound_libraries))
-    print('\n\n')
+    print(len(notfound_libraries), type(notfound_libraries))
 
     notfound_libraries = remove_existing_libs(notfound_libraries, files)
-    print('\n\n')
-    print('libraries that are not in the folder')
+    print('\n\nlibraries that are not in the folder')
     for i in notfound_libraries: print(i)
     print(len(notfound_libraries))
 
-    print('\n\n')
-    print(guess_pkgs(notfound_libraries, output_prefixes=True))
     guessed_pkgs = guess_pkgs(notfound_libraries, output_prefixes=True)
+    print('\npackages that could possibly satisfy dependecies\n', guessed_pkgs)
     string_of_guessed_pkgs = " \n".join(guessed_pkgs)
-#    exit()
+    string_of_guessed_pkgs = 'for path ' + argv[1] + '\n' + string_of_guessed_pkgs
+
     generate_nix(string_of_guessed_pkgs)
     exit(0)
 
